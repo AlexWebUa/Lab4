@@ -76,6 +76,61 @@ def read_all_pages(all_links, links_count, visited_links, site):
     read_all_pages(all_links, links_count, visited_links, site)
     return
 
+# определитель матрицы
+def determinant(xn, xnd, page_ranks):
+    i = 0
+    matrix = [[0] * len(xn.keys())] * len(xn.keys())
+    columns = []
+    for x in xn.keys():
+        for xx in xn.get(x).keys():
+            matrix[i].append(xn.get(x).get(xx) * page_ranks.get(xx))
+        matrix[i].append(xnd.get(x))
+        i += 1
+    for j in range(len(matrix[0])):
+        sum = 0
+        for q in range(len(matrix)):
+            sum += matrix[q][j]
+        columns.append(sum)
+    return columns
+
+# решаем систему линейных уравнений методом Якоби
+def SLAR(links, links_count):
+    xn = {}
+    xnd = {}
+    page_ranks = {}
+    for link in links.keys():
+        tmp = {}
+        for sub_link in links_count.keys():
+            if sub_link in links.get(link):
+                tmp.update({sub_link: (0.5 / links_count.get(sub_link))})
+            else:
+                tmp.update({sub_link: 0})
+        xnd.update({link: (1 - 0.5)})
+        xn.update({link: tmp})
+
+    for x in xn.keys():
+        sum = xnd.get(x)
+        for xx in xn.get(x).keys():
+            sum += (xn.get(x).get(xx) * xnd.get(x))
+        page_ranks.update({x: sum})
+    flag = True
+    while flag:
+        page_ranks_n = {}
+        for x in xn.keys():
+            sum = xnd.get(x)
+            for xx in xn.get(x).keys():
+                sum += (xn.get(x).get(xx) * page_ranks.get(xx))
+            page_ranks_n.update({x: sum})
+
+        flag = False
+        B1 = determinant(xn, xnd, page_ranks)
+        B2 = determinant(xn, xnd, page_ranks_n)
+        for i in range(len(B1)):
+            if abs(B1[i] - B2[i]) > 0.001:
+                flag = True
+        page_ranks = page_ranks_n
+    return page_ranks
+
 
 def read_site():
     site = entry.get()
@@ -83,6 +138,9 @@ def read_site():
     links_count = {site: 0}
     visited_links = {site: False}
     read_all_pages(links, links_count, visited_links, site)
+
+    page_ranks = SLAR(links, links_count)
+    print(page_ranks)
 
 
 buttonOpen = Button(master, text="Start", width=10, command=read_site)
