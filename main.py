@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup
 import requests
 from tkinter import *
+import networkx as nx
+from matplotlib import pyplot as plt
 
 soup = BeautifulSoup()
 
@@ -76,6 +78,7 @@ def read_all_pages(all_links, links_count, visited_links, site):
     read_all_pages(all_links, links_count, visited_links, site)
     return
 
+
 # определитель матрицы
 def determinant(xn, xnd, page_ranks):
     i = 0
@@ -131,6 +134,39 @@ def SLAR(links, links_count):
         page_ranks = page_ranks_n
     return page_ranks
 
+# добавляем ребро графу
+def add_edge(f_item, s_item, graph=None):
+    graph.add_edge(f_item, s_item)
+    graph.add_edge(s_item, f_item)
+
+
+# рисуем граф
+def draw_graph(all_links):
+    graph = nx.Graph()
+    for link_1 in all_links.keys():
+        graph.add_node(link_1)
+        for link_2 in all_links.get(link_1):
+            add_edge(link_1, link_2, graph=graph)
+    nx.draw_circular(graph, node_color='red', node_size=120, edge_color='green', with_labels=True, font_size=6)
+    plt.show()
+
+
+# вывод 10 наибольших значений
+def print_best_10(page_ranks):
+    tmp = sorted(page_ranks.values())
+    tmp.reverse()
+    top_10 = {}
+    for i in range(10):
+        for link in page_ranks.keys():
+            if page_ranks.get(link) == tmp[i]:
+                top_10.update({link: tmp[i]})
+                if len(top_10.keys()) == 10:
+                    break
+    i = 1
+    for n in top_10.keys():
+        print(i, "\t", n, "\t", top_10.get(n))
+        i += 1
+
 
 def read_site():
     site = entry.get()
@@ -141,6 +177,8 @@ def read_site():
 
     page_ranks = SLAR(links, links_count)
     print(page_ranks)
+    print_best_10(page_ranks)
+    draw_graph(links)
 
 
 buttonOpen = Button(master, text="Start", width=10, command=read_site)
